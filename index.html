@@ -1,0 +1,355 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>MacDirtyCow :: Terminal</title>
+    <style>
+        /* MacDirtyCow Stijl v3.0 */
+        :root { 
+            --bg: #0d0d0d; 
+            --card: #1a1a1a; 
+            --text: #fff; 
+            --accent: #00ff88; 
+            --accent-dim: rgba(0, 255, 136, 0.1);
+            /* NIEUW: Gloed-effect */
+            --accent-glow: 0 0 5px rgba(0, 255, 136, 0.5);
+        }
+        html { box-sizing: border-box; }
+        *, *:before, *:after { box-sizing: inherit; }
+        
+        body { 
+            background: var(--bg); color: var(--text); 
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; 
+            display: flex; flex-direction: column; align-items: center; 
+            min-height: 100vh; margin:0; 
+        }
+        
+        #logo {
+            width: 120px; height: auto;
+            margin-top: 1.5rem; margin-bottom: 0.5rem;
+            display: block; margin-left: auto; margin-right: auto;
+            filter: drop-shadow(0 0 8px rgba(0,255,136,0.5));
+        }
+
+        h1 { 
+            color: var(--accent); margin-top: 0.5rem; 
+            text-shadow: var(--accent-glow);
+        }
+        p.subtitle { color:#666; margin-top:-1rem; font-family: monospace; }
+
+        /* Terminal Venster */
+        #log-area {
+            width: 90%; max-width: 700px; height: 250px;
+            background: #000; 
+            border: 1px solid #333; border-left: 4px solid var(--accent);
+            margin: 1rem 0; padding: 10px; font-family: monospace; color: var(--accent); 
+            overflow-y: auto; white-space: pre-wrap; font-size: 14px;
+            cursor: text; /* Maak het klikbaar voor focus */
+        }
+        #terminal-output { white-space: pre-wrap; }
+        
+        /* NIEUW: Echt invoerveld */
+        .prompt-line { display: flex; align-items: center; }
+        #prompt {
+            color: var(--accent);
+            text-shadow: var(--accent-glow);
+            margin-right: 8px;
+        }
+        #terminal-input {
+            background: transparent;
+            border: none;
+            outline: none;
+            color: var(--accent);
+            font-family: monospace;
+            font-size: 14px;
+            width: 100%;
+            text-shadow: var(--accent-glow);
+        }
+
+        /* Gecentreerde knoppen grid */
+        .grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, 200px);
+            gap: 1rem;
+            width: 90%;
+            max-width: 900px; 
+            justify-content: center; 
+        }
+
+        .btn {
+            background: var(--card); border: 1px solid #333; color: #fff;
+            padding: 20px; border-radius: 8px; cursor: pointer;
+            text-align: center; transition: all 0.2s;
+            width: 200px; 
+            box-sizing: border-box; 
+        }
+        .btn:hover { 
+            border-color: var(--accent); 
+            transform: translateY(-2px); 
+            background: var(--accent-dim); 
+        }
+        /* NIEUW: Ingedrukt effect */
+        .btn:active {
+            transform: translateY(1px);
+            background: var(--accent);
+            color: var(--bg);
+        }
+        .btn h3 { margin: 0 0 5px 0; color: var(--accent); font-size: 1rem; text-shadow: var(--accent-glow); }
+        .btn span { font-size: 0.8rem; color: #888; }
+        
+        .section-title { 
+            grid-column: 1 / -1; 
+            margin-top: 1rem; 
+            border-bottom: 1px solid #333; 
+            padding-bottom: 0.5rem; 
+            color: #aaa;
+            text-align: center;
+        }
+    </style>
+</head>
+<body>
+
+    <img id="logo" src="logo.png" alt="MacDirtyCow Logo">
+
+    <h1>MacDirtyCow</h1>
+    <p class="subtitle">Personal Terminal v3.0</p>
+
+    <!-- Terminal venster -->
+    <div id="log-area" onclick="focusInput()">
+        <span id="terminal-output"></span>
+        <!-- Echte invoerregel -->
+        <div class="prompt-line">
+            <span id="prompt">&gt;</span>
+            <input type="text" id="terminal-input" autocomplete="off" autocorrect="off" autocapitalize="none">
+        </div>
+    </div>
+
+    <!-- Knoppen met nieuwe functies -->
+    <div class="grid">
+        <div class="section-title">Navigation</div>
+        
+        <div class="btn" onclick="runCommand('projects')"> 
+            <h3>./projects</h3>
+            <span>View my projects</span>
+        </div>
+        
+        <div class="btn" onclick="runCommand('about')">
+            <h3>./about_me</h3>
+            <span>Who am I?</span>
+        </div>
+
+        <div class="btn" onclick="runCommand('contact')">
+            <h3>./contact</h3>
+            <span>Get in touch</span>
+        </div>
+
+        <div class="btn" onclick="runCommand('socials')"> 
+            <h3>./socials</h3>
+            <span>Find me online</span>
+        </div>
+        
+        <div class="btn" onclick="runCommand('help')">
+            <h3>./help</h3>
+            <span>List all commands</span>
+        </div>
+
+        <div class="btn" onclick="runCommand('clear')">
+            <h3>./clear</h3>
+            <span>Clear the screen</span>
+        </div>
+
+        <!-- Nieuwe functie knoppen -->
+        <div class="btn" onclick="runCommand('date')">
+            <h3>./date</h3>
+            <span>Show current time</span>
+        </div>
+
+        <div class="btn" onclick="runCommand('motd')">
+            <h3>./motd</h3>
+            <span>Show message of the day</span>
+        </div>
+    </div>
+
+    <!-- Interactief Terminal Script -->
+    <script>
+        const terminalOutput = document.getElementById("terminal-output");
+        const logArea = document.getElementById("log-area");
+        const inputField = document.getElementById("terminal-input");
+        
+        let commandQueue = [];
+        let isTyping = false;
+
+        // Helper: Scroll naar beneden
+        function scrollToBottom() {
+            logArea.scrollTop = logArea.scrollHeight;
+        }
+
+        // Helper: Focus op het input veld
+        function focusInput() {
+            inputField.focus();
+        }
+        logArea.addEventListener('click', focusInput);
+
+        // Functie om tekst letter voor letter te typen
+        function type(lines, callback) {
+            isTyping = true;
+            inputField.disabled = true;
+            let lineIndex = 0;
+            let charIndex = 0;
+
+            function typeChar() {
+                if (lineIndex >= lines.length) {
+                    isTyping = false;
+                    inputField.disabled = false;
+                    focusInput();
+                    if (callback) callback();
+                    return;
+                }
+
+                let line = lines[lineIndex];
+                if (charIndex < line.length) {
+                    terminalOutput.innerHTML += line[charIndex];
+                    charIndex++;
+                    scrollToBottom();
+                    setTimeout(typeChar, 15); // Snelheid van typen
+                } else {
+                    terminalOutput.innerHTML += '\n';
+                    lineIndex++;
+                    charIndex = 0;
+                    scrollToBottom();
+                    setTimeout(typeChar, 15); // Pauze tussen regels
+                }
+            }
+            typeChar();
+        }
+
+        // Functie om commando's af te handelen
+        function runCommand(cmd) {
+            if (!cmd) return; // Doe niks als het leeg is
+
+            if (isTyping && cmd !== 'clear') {
+                commandQueue.push(cmd); 
+                return;
+            }
+
+            let linesToType = [];
+            
+            // Toon het commando dat wordt uitgevoerd
+            if (cmd !== 'welcome') {
+                terminalOutput.innerHTML += `> ${cmd}\n`;
+            }
+
+            switch (cmd.toLowerCase()) {
+                case 'welcome':
+                    linesToType = [
+                        "Booting MacDirtyCow OS v3.0...",
+                        "System check... OK.",
+                        "Welcome, user.",
+                        "Click a button or type 'help' for commands.",
+                        "--------------------------------------------------"
+                    ];
+                    break;
+                case 'projects':
+                    linesToType.push("Access granted. Loading project files...");
+                    linesToType.push(" ");
+                    linesToType.push("1. PS4 Host (Concept)");
+                    linesToType.push("   - Status: [In Progress]");
+                    linesToType.push("   - Desc: Building a stable web host for personal research.");
+                    linesToType.push(" ");
+                    linesToType.push("2. This Website (Terminal v3.0)");
+                    linesToType.push("   - Status: [Complete]");
+                    linesToType.push("   - Desc: A personal portfolio built as an interactive terminal.");
+                    linesToType.push(" ");
+                    linesToType.push("3. Custom PC Build ('The Monolith')");
+                    linesToType.push("   - Status: [Complete]");
+                    linesToType.push("   - Desc: All-black ATX build. Silent, powerful, zero RGB.");
+                    break;
+                case 'about':
+                    linesToType.push("Access granted. Loading bio...");
+                    linesToType.push(" ");
+                    linesToType.push("File: /users/macdirtycow/bio.txt");
+                    linesToType.push("---------------------------------");
+                    linesToType.push("Owner of this domain. Just a tech enthusiast who loves");
+                    linesToType.push("gaming, reverse engineering, and cool domain names.");
+                    linesToType.push("This site is a showcase of various projects and ideas.");
+                    break;
+                case 'contact':
+                    linesToType.push("Access granted. Contact info:");
+                    linesToType.push(" ");
+                    linesToType.push("Email: info@macdirtycow.com");
+                    linesToType.push("Note: For project inquiries, please use GitHub first.");
+                    break;
+                case 'socials': 
+                    linesToType.push("Access granted. Fetching online profiles...");
+                    linesToType.push(" ");
+                    linesToType.push("GitHub:   https://github.com/macdirtycow");
+                    linesToType.push("Twitter:  (Your @username here)");
+                    linesToType.push("LinkedIn: (Your profile here)");
+                    break;
+                case 'help': 
+                    linesToType.push("Available commands:");
+                    linesToType.push(" ");
+                    linesToType.push("  projects  - View a list of current projects.");
+                    linesToType.push("  about     - Read the bio of the site owner.");
+                    linesToType.push("  contact   - Get the official email address.");
+                    linesToType.push("  socials   - Find links to GitHub and other social media.");
+                    linesToType.push("  date      - Shows the current date and time.");
+                    linesToType.push("  motd      - Shows the message of the day.");
+                    linesToType.push("  sudo      - ???");
+                    linesToType.push("  clear     - Clears the terminal screen.");
+                    linesToType.push("  help      - Shows this help message.");
+                    break;
+                case 'clear': 
+                    isTyping = false;
+                    commandQueue = []; 
+                    terminalOutput.innerHTML = ""; 
+                    linesToType = []; // Geen extra tekst, gewoon een schone prompt
+                    break;
+                case 'date': // NIEUW
+                    linesToType.push(new Date().toString());
+                    break;
+                case 'motd': // NIEUW
+                    linesToType.push("Message of the Day:");
+                    linesToType.push("'The only true wisdom is in knowing you know nothing.' - Socrates");
+                    break;
+                case 'sudo': // NIEUW
+                    linesToType.push("User is not in the sudoers file.");
+                    linesToType.push("This incident will be reported.");
+                    break;
+                default:
+                    linesToType.push(`Command not found: ${cmd}`);
+                    linesToType.push("Type 'help' to see all available commands.");
+            }
+
+            if (cmd !== 'clear') {
+                linesToType.push(" "); // Lege regel erna
+            }
+
+            // Start het typen
+            type(linesToType, () => {
+                // Check of er nog iets in de wachtrij staat
+                if (commandQueue.length > 0) {
+                    let nextCmd = commandQueue.shift();
+                    runCommand(nextCmd);
+                }
+            });
+        }
+        
+        // Event listener for 'Enter' key
+        inputField.addEventListener('keydown', function(event) {
+            if (event.key === 'Enter') {
+                event.preventDefault();
+                const command = inputField.value;
+                inputField.value = ""; // Maak input leeg
+                runCommand(command);
+            }
+        });
+
+        // Start het welkomstbericht bij laden
+        runCommand('welcome');
+        focusInput();
+
+    </script>
+</body>
+</html>
